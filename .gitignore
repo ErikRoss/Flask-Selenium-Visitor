@@ -1,0 +1,11 @@
+
+
+.idea
+__pycache__
+venv
+migrations
+emulate_test.py
+test.py
+log.log
+settings.txt
+*.log
