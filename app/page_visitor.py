@@ -12,11 +12,21 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 class Browser:
+    """
+    Объект браузера, выполняющего посещение страницы
+    """
     def __init__(self):
         logging.basicConfig(filename='log.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 
     @staticmethod
     def start_driver(useragent):
+        """
+        Установка параметров браузера и его запуск
+
+        :param useragent: user agent пользователя, который будет эмулировать посещение
+
+        :return: webdriver, готовый к дальнейшей работе
+        """
         options = webdriver.ChromeOptions()
         options.add_argument('--no-sandbox')
         options.add_argument('--headless')
@@ -59,6 +69,12 @@ class Browser:
 
     @staticmethod
     def set_cookies(driver, cookies_data):
+        """
+        Установка cookies, сохраненных за пользователем
+
+        :param driver: запущенный ранее webdriver
+        :param cookies_data: строка с сохранёнными cookies
+        """
         driver.delete_all_cookies()
         cookies = json.loads(cookies_data)
         for cookie in cookies:
@@ -66,6 +82,15 @@ class Browser:
         time.sleep(5)
 
     def visit_page(self, user_data, vmc, xcn):
+        """
+        Посещение страницы пользователем
+
+        :param user_data: объект пользователя
+        :param vmc: ключ vmc, полученный при запросе
+        :param xcn: ключ xcn, полученный при запросе
+
+        :return: True - посещение успешно выполнено, False - не удалось посетить страницу
+        """
         visited = False
         for i in range(5):
             try:

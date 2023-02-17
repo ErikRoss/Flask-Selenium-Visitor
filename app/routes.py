@@ -12,6 +12,13 @@ logging.basicConfig(filename='log.log', level=logging.DEBUG, format='%(asctime)s
 
 
 def save_log(module_name, level, message):
+    """
+    Запись логов в БД
+
+    :param module_name: Модуль-источник
+    :param level: Уровень сообщения
+    :param message: Текст сообщения
+    """
     log_entry = LogMessage(module_name, level, message)
     db.session.add(log_entry)
     db.session.commit()
@@ -19,6 +26,11 @@ def save_log(module_name, level, message):
 
 @app.route('/save', methods=['GET', 'POST'])
 def save():
+    """
+    Разбор параметров POST-запроса и сохранение данных о посещении страницы
+
+    :return: "User {key} successfully saved." - данные успешно записаны в БД
+    """
     if request.method == 'POST':
         try:
             user_data = request.form
@@ -154,7 +166,18 @@ def save():
 
 @app.route("/emulate", methods=['POST'])
 def emulate():
+    """
+    Эмуляция посещения страницы через Selenium
+
+    :return: Успех/Неудача посещения страницы
+    """
     def save_vmc(user, value):
+        """
+        Сохранение использованного при посещении страницы vmc за пользователем
+
+        :param user: объект пользователя, которому присваивается полученный vmc
+        :param value: значение vmc
+        """
         if user.used_vmc is None:
             user.used_vmc = value
         else:
@@ -162,6 +185,14 @@ def emulate():
         db.session.commit()
 
     def check_vmc(user, value):
+        """
+        Проверка, был ли ранее использован пользователем указанный vmc
+
+        :param user: проверяемый пользователь
+        :param value: значение vmc
+
+        :return: False - не был использован, True - был использован
+        """
         if user.used_vmc is None:
             return False
         else:
@@ -211,6 +242,11 @@ def emulate():
 
 @app.route("/show_all", methods=['GET', 'POST'])
 def show_all():
+    """
+    Вывод на страницу краткой информации о пользователях, сохранённых в БД
+
+    :return: Страница с таблицей пользователей
+    """
     # UserInfo.query.delete()
     all_users = UserInfo.query.all()
     userslist = ""
@@ -220,7 +256,14 @@ def show_all():
     return f"<html><body>{userslist}</body></html>"
 
 
+@app.route("/show_log/<int:limit>", methods=['GET', 'POST'])
+@app.route("/show_log/", methods=['GET', 'POST'])
 @app.route("/show_log", methods=['GET', 'POST'])
-def show_log():
-    logs = LogMessage.query.order_by(-LogMessage.id).all()
+def show_log(limit=20):
+    """
+    Вывод логов работы на страницу в форме таблицы
+
+    :return: Страница с таблицей записей лога
+    """
+    logs = LogMessage.query.order_by(-LogMessage.id).limit(limit)
     return render_template("logs.html", logs=logs)
