@@ -325,7 +325,7 @@ def save_rule_and_algorithm():
                 else:
                     priority = int(rule.get("priority"))
                 rule_obj = Rule(rule_json["type"], priority, rule_json["param"], rule_json["param_value"],
-                                algorithm)
+                            algorithm, rule_json.get("creator"))
                 db.session.add(rule_obj)
                 db.session.commit()
                 return rule_obj.id
@@ -354,10 +354,26 @@ def save_rule_and_algorithm():
 @app.route('/rules')
 def rules():
     rules_query = Rule.query.all()
-    return render_template('rules.html', rules=rules_query)
+    try:
+        if rules_query != []:
+            return render_template('rules.html', rules=rules_query)
+        else:
+            return "No rules in the database"
+    except Exception:
+        logging.critical(f"Got error saving Rule: {traceback.format_exc()}")
+        return f"An error occurred generating page rules (rules = {rules_query}"
 
 
 @app.route('/algorithm/<int:algorithm_id>')
 def algorithm(algorithm_id):
     algorithm_obj = Algorithm.query.get_or_404(algorithm_id)
     return render_template('algorithm.html', algorithm=algorithm_obj)
+
+
+@app.route('/clear_rules')
+def clear_rules():
+    Algorithm.query.delete()
+    Rule.query.delete()
+    db.session.commit()
+    return "Algorithms & Rules successfully cleared"
+

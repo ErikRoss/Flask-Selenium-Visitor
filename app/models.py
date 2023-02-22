@@ -85,16 +85,18 @@ class Rule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rule_type = db.Column(db.String(100))
     priority = db.Column(db.Integer, default=0)
-    param_name = db.Column(db.String(100))
-    param_value = db.Column(db.String(255))
+    param_name = db.Column(db.String(100), nullable=True)
+    param_value = db.Column(db.String(255), nullable=True)
     algorithm_id = db.Column(db.Integer, db.ForeignKey('algorithm.id'))
+    creator = db.Column(db.Integer, default=0)
 
-    def __init__(self, rule_type, priority, param_name, param_value, algorithm):
+    def __init__(self, rule_type, priority, param_name, param_value, algorithm, creator):
         self.rule_type = rule_type
         self.priority = priority
         self.param_name = param_name
         self.param_value = param_value
         self.algorithm_id = algorithm
+        self.creator = creator
 
     def __repr__(self):
         return f"{self.param_name}: {self.param_value}"
