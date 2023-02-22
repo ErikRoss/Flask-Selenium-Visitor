@@ -1,0 +1,21 @@
+Request data: ImmutableMultiDict([])
+Request headers: Host: 127.0.0.1:5000
+Connection: keep-alive
+Cache-Control: max-age=0
+Sec-Ch-Ua: "Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: "Windows"
+Dnt: 1
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6
+Cookie: username=director; session=.eJztk0tqxDAMhq8yaJ2FZSuylat0hsEvdQrtJp6shrl7E4fSQG9QZvNJfnzix-AHXPUztlttML094HRfC3zV1uJ7hQHOiyHUja52cqfpTBvJ9V56j512vzOcevUH4zip2650hoM37pr9Hfiz9ccmhctzeKV-pf6HqS_D-jXn2m4w3eelrquPAhMkManEgjGzRaopIhcv1mlCZ1AyO0-IQY21yWpKLCUiGha1iJE1s4wuBlozOBKfTXFJxBstITB5ux2hrZW8IR05WibRlNmoGUtIsj7edWl13tMQPL8BdnAxgA.Y4TF6w.4WlA-shEJ16OnEwELcqn4pkjH8M
+
+
+Request args: ImmutableMultiDict([('membercode', 'B1'), ('rma', '333333'), ('xcn', '222')])

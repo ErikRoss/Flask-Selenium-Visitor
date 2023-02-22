@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logs</title>
+    <style type="text/css">
+    table {
+        width: 100%;
+        border:1px solid lightgrey;
+        border-collapse: collapse;
+        overflow-x: auto;
+        display: flex;
+        text-align: center;
+    }
+    th, td {
+      border:1px solid lightgrey;
+      overflow-x: auto;
+    }
+    </style>
+</head>
+<body>
+  <h1>Algorithm {{ algorithm.id }}</h1>
+  <table>
+    <tr>
+      <th>Parameter Name</th>
+      <th>Limit</th>
+      <th>Weight</th>
+    </tr>
+    {% for i in range(1, 11) %}
+      {% set param = 'lvl_' ~ i|string %}
+      {% if algorithm[param] %}
+        {% set param_data = algorithm[param] | from_json %}
+        <tr>
+          <td>{{ param_data['name'] }}</td>
+          <td>{{ param_data['limit'] }}</td>
+          <td>{{ param_data['weight'] }}</td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+  </table>
+  <a href="{{ url_for('rules') }}">Back to Rules</a>
+</body>
+</html>

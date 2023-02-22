@@ -79,3 +79,65 @@ class LogMessage(db.Model):
 
     def __repr__(self):
         return f"{self.timestamp} - {self.module_name}::{self.level}: {self.message}"
+
+
+class Rule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rule_type = db.Column(db.String(100))
+    priority = db.Column(db.Integer, default=0)
+    param_name = db.Column(db.String(100))
+    param_value = db.Column(db.String(255))
+    algorithm_id = db.Column(db.Integer, db.ForeignKey('algorithm.id'))
+
+    def __init__(self, rule_type, priority, param_name, param_value, algorithm):
+        self.rule_type = rule_type
+        self.priority = priority
+        self.param_name = param_name
+        self.param_value = param_value
+        self.algorithm_id = algorithm
+
+    def __repr__(self):
+        return f"{self.param_name}: {self.param_value}"
+
+
+class Algorithm(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rules = db.relationship('Rule', backref='algorithm', lazy=True)
+    lvl_1 = db.Column(db.String(255), nullable=True)
+    lvl_2 = db.Column(db.String(255), nullable=True)
+    lvl_3 = db.Column(db.String(255), nullable=True)
+    lvl_4 = db.Column(db.String(255), nullable=True)
+    lvl_5 = db.Column(db.String(255), nullable=True)
+    lvl_6 = db.Column(db.String(255), nullable=True)
+    lvl_7 = db.Column(db.String(255), nullable=True)
+    lvl_8 = db.Column(db.String(255), nullable=True)
+    lvl_9 = db.Column(db.String(255), nullable=True)
+    lvl_10 = db.Column(db.String(255), nullable=True)
+    uses_1 = db.Column(db.Integer, default=0)
+    uses_2 = db.Column(db.Integer, default=0)
+    uses_3 = db.Column(db.Integer, default=0)
+    uses_4 = db.Column(db.Integer, default=0)
+    uses_5 = db.Column(db.Integer, default=0)
+    uses_6 = db.Column(db.Integer, default=0)
+    uses_7 = db.Column(db.Integer, default=0)
+    uses_8 = db.Column(db.Integer, default=0)
+    uses_9 = db.Column(db.Integer, default=0)
+    uses_10 = db.Column(db.Integer, default=0)
+
+    def __init__(self, lvl_1=None, lvl_2=None, lvl_3=None, lvl_4=None, lvl_5=None, lvl_6=None, lvl_7=None,
+                 lvl_8=None, lvl_9=None, lvl_10=None):
+        self.lvl_1 = lvl_1
+        self.lvl_2 = lvl_2
+        self.lvl_3 = lvl_3
+        self.lvl_4 = lvl_4
+        self.lvl_5 = lvl_5
+        self.lvl_6 = lvl_6
+        self.lvl_7 = lvl_7
+        self.lvl_8 = lvl_8
+        self.lvl_9 = lvl_9
+        self.lvl_10 = lvl_10
+
+    def __repr__(self):
+        return f"Algorithm {self.id}: Param 1: {self.lvl_1}, Param 2: {self.lvl_2}, Param 3: {self.lvl_3}, " \
+               f"Param 4: {self.lvl_4}, Param 5: {self.lvl_5}, Param 6: {self.lvl_6}, Param 7: {self.lvl_7}, " \
+               f"Param 8: {self.lvl_8}, Param 9: {self.lvl_9}, Param 10: {self.lvl_10}"
