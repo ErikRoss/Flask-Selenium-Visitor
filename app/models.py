@@ -24,7 +24,7 @@ class UserInfo(db.Model):
     domain = db.Column(db.String(50))
     link = db.Column(db.String(250))
     rma = db.Column(db.String(20))
-    ip = db.Column(db.String(16))
+    ip = db.Column(db.String(50))
     isp = db.Column(db.String(100))
     lang = db.Column(db.String(5))
     country = db.Column(db.String(5))
