@@ -9,3 +9,4 @@ test.py
 log.log
 settings.txt
 *.log
+send_test_request.py

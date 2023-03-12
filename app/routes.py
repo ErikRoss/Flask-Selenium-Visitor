@@ -1,5 +1,3 @@
-# for key, value in request.args.items():
-# pass
 import json
 import logging
 import traceback
@@ -258,7 +256,6 @@ def show_all():
 
     :return: Страница с таблицей пользователей
     """
-    # UserInfo.query.delete()
     all_users = UserInfo.query.all()
     userslist = ""
     for user in all_users:
@@ -294,7 +291,6 @@ def get_algorithm_parameters(alg):
         else:
             value = alg.get(key_name)
             value["name"] = key_name
-            # value["stopped"] = False
         print(f"Value for key {key_name}: {value}")
         parameters.append(json.dumps(value))
     if parameters:
@@ -362,7 +358,7 @@ def rules():
         else:
             return "No rules in the database"
     except Exception:
-        logging.critical(f"Got error saving Rule: {traceback.format_exc()}")
+        logging.critical(f"Got error building Rules page: {traceback.format_exc()}")
         return f"An error occurred generating page rules (rules = {rules_query}"
 
 
@@ -374,8 +370,8 @@ def show_algorithm(algorithm_id):
 
 @app.route('/clear_rules')
 def clear_rules():
-    Algorithm.query.delete()
     Rule.query.delete()
+    Algorithm.query.delete()
     db.session.commit()
     return "Algorithms & Rules successfully cleared"
 
@@ -422,7 +418,7 @@ def test_emulate():
         key = request_args.get('key')
         vmc = request_args.get('vmc')
         xcn = request_args.get('xcn')
-        save_log("Emulate", "INFO", f"Got parameters: key={key}, vmc={vmc}, xcn={xcn}")
+        save_log("TEST", "INFO", f"Got parameters: key={key}, vmc={vmc}, xcn={xcn}")
         logging.info(f"Got parameters: key={key}, vmc={vmc}, xcn={xcn}")
         if key is None or vmc is None or xcn is None:
             return None
@@ -434,55 +430,70 @@ def test_emulate():
             return None
         params_list = []
         for key, value in request.args.items():
-            if key in ["key", "vmc", "xcn"] is False and value is not None:
+            if key not in ["key", "vmc", "xcn"] and value is not None:
                 param_dict = {"param_name": key, "param_value": value}
                 params_list.append(param_dict)
 
         member = request_args.get('membercode')
         if member is None:
             member = 0
+        else:
+            member = int(member)
+        logging.info(f"Collected parameters: {params_list}")
         return {"membercode": member, "params": params_list}
 
     def find_valid_rule(request_parameters):
         member = request_parameters["membercode"]
         params_list = request_parameters["params"]
         member_rules = Rule.query.filter_by(creator=member).order_by(Rule.priority.desc()).all()
-        chosen_rule = None
+        logging.info(f"Got parameters: {params_list} for member code {member}")
+        logging.info(f"Found {member_rules} for member code {member}")
+        found = None
         # choose from defined and generated
         for mr in member_rules:
             for param in params_list:
+                logging.info(f"Rule param name {type(mr.param_name)} {mr.param_name} | {type(param['param_name'])} {param['param_name']}")
+                logging.info(f"Rule param value {type(mr.param_value)} {mr.param_value} | {type(param['param_value'])} {param['param_value']}")
                 if mr.param_name == param["param_name"] and mr.param_value == param["param_value"]:
-                    chosen_rule = mr
+                    logging.info(f"Match found!")
+                    found = mr
+                    logging.info(f"Chosen rule: {found} for member code {member}")
                     break
-            if chosen_rule is not None:
+            if found is not None:
                 break
         # choose from auto
-        if chosen_rule is None:
+        if found is None:
             for mr in member_rules:
                 for param in params_list:
                     if mr.param_name == param["param_name"] and mr.rule_type == "auto":
-                        chosen_rule = mr
+                        found = mr
                         break
-                if chosen_rule is not None:
+                if found is not None:
                     break
-        return chosen_rule
+        logging.info(f"Result Rule is {found} for member code {member}")
+        return found
 
     def choose_rule(request_args=None):
         request_parameters = collect_parameters(request_args)
         if request_parameters is None:
             return None
-        chosen_rule = None
+
         member = request_parameters["membercode"]
-        if request_parameters["membercode"] != 0:
-            chosen_rule = find_valid_rule(request_parameters)
-        if chosen_rule is None:
+        chosen = find_valid_rule(request_parameters)
+        logging.info(f"First loop chosen rule: {chosen} for member code {member}")
+
+        if chosen is None:
             request_parameters["membercode"] = 0
-            chosen_rule = find_valid_rule(request_parameters)
-        if choose_rule is None:
-            return chosen_rule
-        if chosen_rule.rule_type == "auto":
-            created_rule = create_new_rule(chosen_rule, request_parameters, member)
+            chosen = find_valid_rule(request_parameters)
+
+        if chosen is None:
+            return None
+
+        if chosen.rule_type == "auto":
+            created_rule = create_new_rule(chosen, request_parameters["params"], member)
             return created_rule
+        else:
+            return chosen
 
     def create_new_rule(auto_rule, parameters, member):
         got_param = next((i for i in parameters if i["param_name"] == auto_rule.param_name), None)
@@ -503,34 +514,36 @@ def test_emulate():
         new_rule = save_rule(rule_json, new_algorithm)
         if new_rule is False:
             save_log("TEST", "ERROR", f"Failed to create new rule from Rule [{auto_rule.id}]")
+            logging.critical(f"Failed to create new rule from Rule [{auto_rule.id}]")
             return None
         else:
             save_log("TEST", "INFO", f"Successfully created new Rule [{new_rule}] with Algorithm [{new_algorithm}]")
+            logging.critical(f"Successfully created new Rule [{new_rule}] with Algorithm [{new_algorithm}]")
             return Rule.query.get(int(new_rule))
 
-    def clone_algorithm(algorithm_id=None):
+    def clone_algorithm(oa=None):
         try:
-            oa = Algorithm.query.get(algorithm_id)
+            logging.info(f"Found Algorithm [{oa}]")
             if oa is None:
                 return False
             else:
                 algorithm_obj = Algorithm(
-                    oa.lvl_1,
-                    oa.lvl_2,
-                    oa.lvl_3,
-                    oa.lvl_4,
-                    oa.lvl_5,
-                    oa.lvl_6,
-                    oa.lvl_7,
-                    oa.lvl_8,
-                    oa.lvl_9,
-                    oa.lvl_10
+                    lvl_1=oa.lvl_1,
+                    lvl_2=oa.lvl_2,
+                    lvl_3=oa.lvl_3,
+                    lvl_4=oa.lvl_4,
+                    lvl_5=oa.lvl_5,
+                    lvl_6=oa.lvl_6,
+                    lvl_7=oa.lvl_7,
+                    lvl_8=oa.lvl_8,
+                    lvl_9=oa.lvl_9,
+                    lvl_10=oa.lvl_10
                 )
                 db.session.add(algorithm_obj)
                 db.session.commit()
                 return algorithm_obj.id
         except Exception:
-            logging.critical(f"Got error saving Algorithm: {traceback.format_exc()}")
+            logging.critical(f"Got error clonning Algorithm: {traceback.format_exc()}")
             return False
 
     def find_lvl_fields(algorithm_id, lvl_name):
@@ -539,7 +552,7 @@ def test_emulate():
             lvl_data = getattr(algorithm, lvl_attr)
             if lvl_data:
                 parsed_data = json.loads(lvl_data)
-                if parsed_data["name"] == lvl_name:
+                if parsed_data is not None and parsed_data["name"] == lvl_name:
                     lvl_num = int(lvl_attr.split("_")[-1])
                     stopped = getattr(algorithm, f'stopped_{lvl_num}')
                     return {"lvl_num": lvl_num, "lvl_data": parsed_data, "stopped": stopped}
@@ -566,44 +579,47 @@ def test_emulate():
         user_data = UserInfo.query.filter(UserInfo.key == keys["key"]).first()
         logging.info(f"Found User: {user_data}")
         if user_data is not None:
-            save_log("Emulate", "INFO", f"Found User: {user_data}")
+            save_log("TEST", "INFO", f"Found User: {user_data}")
             if check_vmc(user_data, keys["vmc"]) is False:
                 visit = page_visitor.Browser().visit_page(user_data, vmc=keys["vmc"], xcn=keys["xcn"])
                 if visit is True:
-                    save_log("Emulate", "INFO", f"User {keys['key']} successfully visited page.")
+                    save_log("TEST", "INFO", f"User {keys['key']} successfully visited page.")
                     save_vmc(user_data, keys["vmc"])
                     return "Page successfully visited."
                 else:
-                    save_log("Emulate", "ERROR", f"User {keys['key']} not visited page. (Source link: {user_data.link}")
+                    save_log("TEST", "ERROR", f"User {keys['key']} not visited page. (Source link: {user_data.link}")
                     return "Page not visited."
             else:
-                save_log("Emulate", "ERROR",
+                save_log("TEST", "ERROR",
                          f"User {keys['key']} not visited page. This vmc ({keys['vmc']}) is already used.")
                 return f"Page not visited. This vmc ({keys['vmc']}) is already used."
         else:
-            save_log("Emulate", "ERROR", f"Can't visit page: User not found.")
+            save_log("TEST", "ERROR", f"Can't visit page: User not found.")
             return "User not found."
 
     keys_dict = get_keys(request.args)
     if keys_dict is not None:
         chosen_rule = choose_rule(request.args)
+        logging.info(f"Chosen rule: {chosen_rule}")
         if chosen_rule is None:
-            save_log("Emulate", "ERROR", "Can't visit page: Not found any rule for current request")
+            save_log("TEST", "ERROR", "Can't visit page: Not found any rule for current request")
             return "Page not visited. Not found any rule for current request"
+        logging.info(f"Algorithm ID: {chosen_rule.algorithm_id}")
         chosen_lvl = find_lvl_fields(chosen_rule.algorithm_id, keys_dict["vmc"])
         if chosen_lvl is None:
-            save_log("Emulate", "ERROR",
+            save_log("TEST", "ERROR",
                      f"Can't visit page: vmc key not found in algorithm [{chosen_rule.algorithm_id}]")
             return "Page not visited."
         if chosen_lvl["stopped"] is True:
-            save_log("Emulate", "INFO",
+            save_log("TEST", "INFO",
                      f"Can't visit page: limit reached for {keys_dict['vmc']} [{chosen_rule.algorithm_id}]")
-            return "Page not visited."
+            return "Page not visited: limit reached."
         else:
+            # visit_result = "Page successfully visited."
             visit_result = make_visit(keys_dict)
             if visit_result == "Page successfully visited.":
                 update_algorithm(chosen_rule.algorithm_id, chosen_lvl)
             return visit_result
     else:
-        save_log("Emulate", "ERROR", "Can't visit page: required parameters are missing")
+        save_log("TEST", "ERROR", "Can't visit page: required parameters are missing")
         return "Page not visited."

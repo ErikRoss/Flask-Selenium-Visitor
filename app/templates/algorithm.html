@@ -14,6 +14,7 @@
     th, td {
       border:1px solid lightgrey;
       overflow-x: auto;
+      padding: 0 10px;
     }
     a {
       color:#000;
@@ -24,12 +25,12 @@
   <h3>Algorithm {{ algorithm.id }}</h3>
   <table>
     <tr>
-      <th>Parameter Name</th>
-      <th>Weight</th>
-      <th>Limit prev</th>
-      <th>Self limit</th>
-      <th>Hits</th>
-      <th>Stopped</th>
+      <th> Parameter Name </th>
+      <th> Weight </th>
+      <th> Limit prev </th>
+      <th> Self limit </th>
+      <th> Hits </th>
+      <th> Stopped </th>
     </tr>
     {% for i in range(1, 11) %}
       {% set param = 'lvl_' ~ i|string %}
