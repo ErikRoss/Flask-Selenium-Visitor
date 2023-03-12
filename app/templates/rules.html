@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rules</title>
+    <style type="text/css">
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow-x: auto;
+        display: flex;
+        text-align: center;
+    }
+    th, td {
+      border:1px solid lightgrey;
+      overflow-x: auto;
+    }
+    a {
+      color:#000;
+    }
+    </style>
+</head>
+<body>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>Rule Type</th>
+      <th>Param Name</th>
+      <th>Param Value</th>
+      <th>Priority</th>
+      <th>Algorithm</th>
+    </tr>
+    {% for rule in rules %}
+    <tr>
+      <td>{{ rule.id }}</td>
+      <td>{{ rule.rule_type }}</td>
+      <td>{{ rule.param_name }}</td>
+      <td>{{ rule.param_value }}</td>
+      <td>{{ rule.priority }}</td>
+      <td><a href="{{ url_for('algorithm', algorithm_id=rule.algorithm_id) }}">Algorithm {{ rule.algorithm_id }}</a></td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>
