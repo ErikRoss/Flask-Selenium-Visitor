@@ -34,6 +34,7 @@
     {% for i in range(1, 11) %}
       {% set param = 'lvl_' ~ i|string %}
       {% set counter = 'uses_' ~ i|string %}
+      {% set stopped = 'stopped_' ~ i|string %}
       {% if algorithm[param] %}
         {% set param_data = algorithm[param] | from_json %}
           {% if param_data is not none %}
@@ -43,7 +44,7 @@
             <td>{{ param_data['count_stop_previ'] }}</td>
             <td>{{ param_data['count_stop_self'] }}</td>
             <td>{{ algorithm[counter] }}</td>
-            <td>{{ param_data['stopped'] }}</td>
+            <td>{{ algorithm[stopped] }}</td>
           </tr>
           {% endif %}
       {% endif %}

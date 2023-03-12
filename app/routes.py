@@ -294,7 +294,7 @@ def get_algorithm_parameters(alg):
         else:
             value = alg.get(key_name)
             value["name"] = key_name
-            value["stopped"] = False
+            # value["stopped"] = False
         print(f"Value for key {key_name}: {value}")
         parameters.append(json.dumps(value))
     if parameters:
@@ -328,7 +328,7 @@ def save_rule(rule, alg):
                 priority = 0
             else:
                 priority = int(rule.get("priority"))
-            rule_obj = Rule(rule["type"], priority, rule["param"], rule["param_value"], alg, rule.get("creator"))
+            rule_obj = Rule(rule["type"], priority, rule["param"], rule.get("param_value"), alg, rule.get("creator"))
             db.session.add(rule_obj)
             db.session.commit()
             return rule_obj.id
@@ -367,7 +367,7 @@ def rules():
 
 
 @app.route('/algorithm/<int:algorithm_id>')
-def algorithm(algorithm_id):
+def show_algorithm(algorithm_id):
     algorithm_obj = Algorithm.query.get_or_404(algorithm_id)
     return render_template('algorithm.html', algorithm=algorithm_obj)
 
@@ -429,37 +429,138 @@ def test_emulate():
         else:
             return {"key": key, "vmc": vmc, "xcn": xcn}
 
-    def check_rule(request_args=None):
+    def collect_parameters(request_args=None):
         if request_args is None:
             return None
-        member = request_args.get('membercode')
-        if member is None:
-            member = 0
-        member_rules = Rule.query.filter_by(creator=member).order_by(Rule.priority.desc()).all()
-        if not member_rules:
-            member_rules = Rule.query.filter_by(creator=0).order_by(Rule.priority.desc()).all()
-
         params_list = []
         for key, value in request.args.items():
-            if key in ["key", "vmc", "xcn"] is False:
+            if key in ["key", "vmc", "xcn"] is False and value is not None:
                 param_dict = {"param_name": key, "param_value": value}
                 params_list.append(param_dict)
 
+        member = request_args.get('membercode')
+        if member is None:
+            member = 0
+        return {"membercode": member, "params": params_list}
+
+    def find_valid_rule(request_parameters):
+        member = request_parameters["membercode"]
+        params_list = request_parameters["params"]
+        member_rules = Rule.query.filter_by(creator=member).order_by(Rule.priority.desc()).all()
         chosen_rule = None
+        # choose from defined and generated
         for mr in member_rules:
             for param in params_list:
                 if mr.param_name == param["param_name"] and mr.param_value == param["param_value"]:
-                    defined_rules = mr
+                    chosen_rule = mr
                     break
             if chosen_rule is not None:
                 break
+        # choose from auto
+        if chosen_rule is None:
+            for mr in member_rules:
+                for param in params_list:
+                    if mr.param_name == param["param_name"] and mr.rule_type == "auto":
+                        chosen_rule = mr
+                        break
+                if chosen_rule is not None:
+                    break
+        return chosen_rule
 
+    def choose_rule(request_args=None):
+        request_parameters = collect_parameters(request_args)
+        if request_parameters is None:
+            return None
+        chosen_rule = None
+        member = request_parameters["membercode"]
+        if request_parameters["membercode"] != 0:
+            chosen_rule = find_valid_rule(request_parameters)
+        if chosen_rule is None:
+            request_parameters["membercode"] = 0
+            chosen_rule = find_valid_rule(request_parameters)
+        if choose_rule is None:
+            return chosen_rule
+        if chosen_rule.rule_type == "auto":
+            created_rule = create_new_rule(chosen_rule, request_parameters, member)
+            return created_rule
 
-    def add_rule(rule=None):
-        pass
+    def create_new_rule(auto_rule, parameters, member):
+        got_param = next((i for i in parameters if i["param_name"] == auto_rule.param_name), None)
+        param_name = got_param["param_name"]
+        param_value = got_param["param_value"]
+        priority = Rule.query.filter_by(creator=member).order_by(Rule.priority.desc()).all()[0].priority
+        new_algorithm = clone_algorithm(auto_rule.algorithm)
+        if new_algorithm is False:
+            logging.critical(f"Got error saving Algorithm: {traceback.format_exc()}")
+            return False
+        rule_json = {
+             "type": "generated",
+             "priority": int(priority) + 1,
+             "creator": int(member),
+             "param": param_name,
+             "param_value": param_value
+        }
+        new_rule = save_rule(rule_json, new_algorithm)
+        if new_rule is False:
+            save_log("TEST", "ERROR", f"Failed to create new rule from Rule [{auto_rule.id}]")
+            return None
+        else:
+            save_log("TEST", "INFO", f"Successfully created new Rule [{new_rule}] with Algorithm [{new_algorithm}]")
+            return Rule.query.get(int(new_rule))
 
-    def update_algorithm(algorithm_id=None):
-        pass
+    def clone_algorithm(algorithm_id=None):
+        try:
+            oa = Algorithm.query.get(algorithm_id)
+            if oa is None:
+                return False
+            else:
+                algorithm_obj = Algorithm(
+                    oa.lvl_1,
+                    oa.lvl_2,
+                    oa.lvl_3,
+                    oa.lvl_4,
+                    oa.lvl_5,
+                    oa.lvl_6,
+                    oa.lvl_7,
+                    oa.lvl_8,
+                    oa.lvl_9,
+                    oa.lvl_10
+                )
+                db.session.add(algorithm_obj)
+                db.session.commit()
+                return algorithm_obj.id
+        except Exception:
+            logging.critical(f"Got error saving Algorithm: {traceback.format_exc()}")
+            return False
+
+    def find_lvl_fields(algorithm_id, lvl_name):
+        algorithm = Algorithm.query.get(algorithm_id)
+        for lvl_attr in ["lvl_1", "lvl_2", "lvl_3", "lvl_4", "lvl_5", "lvl_6", "lvl_7", "lvl_8", "lvl_9", "lvl_10"]:
+            lvl_data = getattr(algorithm, lvl_attr)
+            if lvl_data:
+                parsed_data = json.loads(lvl_data)
+                if parsed_data["name"] == lvl_name:
+                    lvl_num = int(lvl_attr.split("_")[-1])
+                    stopped = getattr(algorithm, f'stopped_{lvl_num}')
+                    return {"lvl_num": lvl_num, "lvl_data": parsed_data, "stopped": stopped}
+        return None
+
+    def update_algorithm(algorithm_id, lvl):
+        def stop_lvl(lvl_num):
+            stopped_field = f'stopped_{lvl_num}'
+            stopped_val = True
+            setattr(algorithm, stopped_field, stopped_val)
+
+        algorithm = Algorithm.query.get(algorithm_id)
+        uses_field = f'uses_{lvl["lvl_num"]}'
+        uses_value = getattr(algorithm, uses_field) + 1
+        setattr(algorithm, uses_field, uses_value)
+        if uses_value >= lvl["lvl_data"]["count_stop_self"]:
+            stop_lvl(lvl["lvl_num"])
+        if uses_value >= lvl["lvl_data"]["count_stop_previ"]:
+            for i in range(1, lvl["lvl_num"]):
+                stop_lvl(i)
+        db.session.commit()
 
     def make_visit(keys):
         user_data = UserInfo.query.filter(UserInfo.key == keys["key"]).first()
@@ -485,7 +586,24 @@ def test_emulate():
 
     keys_dict = get_keys(request.args)
     if keys_dict is not None:
-        return make_visit(keys_dict)
+        chosen_rule = choose_rule(request.args)
+        if chosen_rule is None:
+            save_log("Emulate", "ERROR", "Can't visit page: Not found any rule for current request")
+            return "Page not visited. Not found any rule for current request"
+        chosen_lvl = find_lvl_fields(chosen_rule.algorithm_id, keys_dict["vmc"])
+        if chosen_lvl is None:
+            save_log("Emulate", "ERROR",
+                     f"Can't visit page: vmc key not found in algorithm [{chosen_rule.algorithm_id}]")
+            return "Page not visited."
+        if chosen_lvl["stopped"] is True:
+            save_log("Emulate", "INFO",
+                     f"Can't visit page: limit reached for {keys_dict['vmc']} [{chosen_rule.algorithm_id}]")
+            return "Page not visited."
+        else:
+            visit_result = make_visit(keys_dict)
+            if visit_result == "Page successfully visited.":
+                update_algorithm(chosen_rule.algorithm_id, chosen_lvl)
+            return visit_result
     else:
         save_log("Emulate", "ERROR", "Can't visit page: required parameters are missing")
         return "Page not visited."

@@ -125,6 +125,16 @@ class Algorithm(db.Model):
     uses_8 = db.Column(db.Integer, default=0)
     uses_9 = db.Column(db.Integer, default=0)
     uses_10 = db.Column(db.Integer, default=0)
+    stopped_1 = db.Column(db.Boolean, default=False)
+    stopped_2 = db.Column(db.Boolean, default=False)
+    stopped_3 = db.Column(db.Boolean, default=False)
+    stopped_4 = db.Column(db.Boolean, default=False)
+    stopped_5 = db.Column(db.Boolean, default=False)
+    stopped_6 = db.Column(db.Boolean, default=False)
+    stopped_7 = db.Column(db.Boolean, default=False)
+    stopped_8 = db.Column(db.Boolean, default=False)
+    stopped_9 = db.Column(db.Boolean, default=False)
+    stopped_10 = db.Column(db.Boolean, default=False)
 
     def __init__(self, lvl_1=None, lvl_2=None, lvl_3=None, lvl_4=None, lvl_5=None, lvl_6=None, lvl_7=None,
                  lvl_8=None, lvl_9=None, lvl_10=None):
