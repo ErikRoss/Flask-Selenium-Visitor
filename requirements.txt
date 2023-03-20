@@ -1,6 +1,6 @@
-alembic==1.9.2
-Flask==2.2.2
-SQLAlchemy==1.4.46
-
+Flask~=2.2.2
 selenium~=4.8.0
 requests~=2.28.2
+alembic~=1.9.2
+SQLAlchemy~=1.4.46
+Werkzeug~=2.2.3
