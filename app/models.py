@@ -22,7 +22,7 @@ class UserInfo(db.Model):
     device_model = db.Column(db.String(100))
     device_type_lang = db.Column(db.String(100))
     domain = db.Column(db.String(50))
-    link = db.Column(db.String(250))
+    link = db.Column(db.Text)
     rma = db.Column(db.String(20))
     ip = db.Column(db.String(50))
     isp = db.Column(db.String(100))
